@@ -1,8 +1,16 @@
 <?php
-// Temporary, non-sensitive runtime diagnostic. Remove after deployment is verified.
-if (isset($_GET['__health']) && $_GET['__health'] === '1') {
+// Temporary diagnostics. Remove these branches after the deployment issue is resolved.
+// Some serverless PHP adapters do not populate $_GET consistently, so parse the
+// raw query string as a fallback. No query value is used in a shell command.
+$rawQuery = array();
+parse_str((string) ($_SERVER['QUERY_STRING'] ?? ''), $rawQuery);
+$diagnosticQuery = array_merge($rawQuery, is_array($_GET ?? null) ? $_GET : array());
+
+if (($diagnosticQuery['__health'] ?? null) === '1') {
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode(array(
+        'diagnostic' => 'health',
+        'query_string_seen' => (string) ($_SERVER['QUERY_STRING'] ?? ''),
         'php' => PHP_VERSION,
         'sapi' => PHP_SAPI,
         'mysqli' => extension_loaded('mysqli'),
@@ -10,13 +18,11 @@ if (isset($_GET['__health']) && $_GET['__health'] === '1') {
         'system_dir' => is_dir(__DIR__ . '/../system'),
         'application_dir' => is_dir(__DIR__ . '/../application'),
         'controller_file' => is_file(__DIR__ . '/../application/controllers/Products.php')
-    ));
+    ), JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR);
     exit;
 }
 
-// Run PHP's own syntax checker in a subprocess if the deployment permits it.
-// Paths are fixed here; no request value is used in a shell command.
-if (isset($_GET['__syntax']) && $_GET['__syntax'] === '1') {
+if (($diagnosticQuery['__syntax'] ?? null) === '1') {
     header('Content-Type: application/json; charset=utf-8');
     $files = array(
         'front_controller' => __DIR__ . '/../index.php',
@@ -25,6 +31,8 @@ if (isset($_GET['__syntax']) && $_GET['__syntax'] === '1') {
         'app_constants' => __DIR__ . '/../application/config/constants.php'
     );
     $result = array(
+        'diagnostic' => 'syntax',
+        'query_string_seen' => (string) ($_SERVER['QUERY_STRING'] ?? ''),
         'php' => PHP_VERSION,
         'php_binary' => PHP_BINARY,
         'shell_exec_available' => function_exists('shell_exec'),
@@ -52,8 +60,6 @@ if (isset($_GET['__syntax']) && $_GET['__syntax'] === '1') {
     exit;
 }
 
-// Log entry before loading CodeIgniter, so we can distinguish a Vercel function
-// startup issue from a failure inside the application bootstrap.
 $requestId = $_SERVER['HTTP_X_VERCEL_ID'] ?? $_SERVER['HTTP_X_REQUEST_ID'] ?? 'unavailable';
 error_log('[GamingPlace] ' . json_encode(array(
     'level' => 'entrypoint',
@@ -64,6 +70,7 @@ error_log('[GamingPlace] ' . json_encode(array(
     'sapi' => PHP_SAPI,
     'method' => $_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN',
     'uri' => parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH),
+    'query_string' => (string) ($_SERVER['QUERY_STRING'] ?? ''),
     'front_controller_exists' => is_file(__DIR__ . '/../index.php')
 ), JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR));
 
