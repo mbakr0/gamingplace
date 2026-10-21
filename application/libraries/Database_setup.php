@@ -15,7 +15,8 @@ class Database_setup
         $CI =& get_instance();
 
         if (!isset($CI->db) || !$CI->db->conn_id) {
-            log_message('error', 'GamingPlace database setup skipped: database connection is unavailable.');
+            $dbError = (isset($CI->db) && method_exists($CI->db, 'error')) ? $CI->db->error() : array();
+            log_message('error', 'GamingPlace database setup skipped: database connection is unavailable. ' . (isset($dbError['message']) ? $dbError['message'] : 'Check DB_HOST, DB_USER, DB_PASS, and DB_NAME environment variables.'));
             return;
         }
 
@@ -70,7 +71,8 @@ class Database_setup
 
         foreach ($statements as $sql) {
             if ($CI->db->query($sql) === FALSE) {
-                log_message('error', 'GamingPlace database setup could not create a required table. Check TiDB permissions and schema compatibility.');
+                $dbError = $CI->db->error();
+                log_message('error', 'GamingPlace database setup could not create a required table: ' . (isset($dbError['message']) ? $dbError['message'] : 'unknown database error') . '. Check TiDB permissions and schema compatibility.');
                 return;
             }
         }
@@ -123,7 +125,8 @@ class Database_setup
         foreach ($products as $product) {
             $exists = $CI->db->where('title', $product['title'])->count_all_results('products');
             if ($exists === 0 && $CI->db->insert('products', $product) === FALSE) {
-                log_message('error', 'GamingPlace could not seed starter product: ' . $product['title']);
+                $dbError = $CI->db->error();
+                log_message('error', 'GamingPlace could not seed starter product ' . $product['title'] . ': ' . (isset($dbError['message']) ? $dbError['message'] : 'unknown database error'));
             }
         }
     }
@@ -135,7 +138,10 @@ class Database_setup
         foreach ($categories as $name) {
             $exists = $CI->db->where('name', $name)->count_all_results('categoies');
             if ($exists === 0) {
-                $CI->db->insert('categoies', array('name' => $name));
+                if ($CI->db->insert('categoies', array('name' => $name)) === FALSE) {
+                    $dbError = $CI->db->error();
+                    log_message('error', 'GamingPlace could not seed category ' . $name . ': ' . (isset($dbError['message']) ? $dbError['message'] : 'unknown database error'));
+                }
             }
         }
     }
