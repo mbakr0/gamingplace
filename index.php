@@ -149,62 +149,6 @@ switch (ENVIRONMENT)
 }
 
 
-// Temporary production diagnostics. These messages go to Vercel Function Logs;
-// never return exception details or stack traces to visitors.
-$gamingPlaceRequestId = $_SERVER['HTTP_X_VERCEL_ID']
-	?? $_SERVER['HTTP_X_REQUEST_ID']
-	?? uniqid('gp-', true);
-
-$gamingPlaceLog = static function ($level, $message, array $context = array()) use (&$gamingPlaceRequestId) {
-	$record = array(
-		'app' => 'GamingPlace',
-		'level' => $level,
-		'request_id' => $gamingPlaceRequestId,
-		'time' => gmdate('c'),
-		'message' => $message,
-		'context' => $context
-	);
-	error_log('[GamingPlace] ' . json_encode($record, JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR));
-};
-
-set_error_handler(static function ($severity, $message, $file, $line) use ($gamingPlaceLog) {
-	if (!(error_reporting() & $severity)) {
-		return false;
-	}
-	$gamingPlaceLog('php_error', $message, array('severity' => $severity, 'file' => $file, 'line' => $line));
-	return false;
-});
-
-set_exception_handler(static function ($exception) use ($gamingPlaceLog) {
-	$gamingPlaceLog('uncaught_exception', get_class($exception) . ': ' . $exception->getMessage(), array(
-		'file' => $exception->getFile(),
-		'line' => $exception->getLine(),
-		'trace' => $exception->getTraceAsString()
-	));
-	http_response_code(500);
-	if (!headers_sent()) {
-		header('Content-Type: text/plain; charset=utf-8');
-	}
-	echo 'Internal Server Error. Check Vercel Function Logs for the GamingPlace request ID.';
-});
-
-register_shutdown_function(static function () use ($gamingPlaceLog) {
-	$error = error_get_last();
-	if ($error !== NULL && in_array($error['type'], array(E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR), TRUE)) {
-		$gamingPlaceLog('fatal_error', $error['message'], array('file' => $error['file'], 'line' => $error['line'], 'type' => $error['type']));
-	}
-});
-
-$gamingPlaceLog('bootstrap_started', 'PHP front controller entered', array(
-	'php_version' => PHP_VERSION,
-	'sapi' => PHP_SAPI,
-	'method' => $_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN',
-	'uri' => parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH),
-	'system_dir_exists' => is_dir(__DIR__ . '/system'),
-	'application_dir_exists' => is_dir(__DIR__ . '/application'),
-	'memory_limit' => ini_get('memory_limit')
-));
-
 /*
  *---------------------------------------------------------------
  * SYSTEM DIRECTORY NAME
@@ -428,6 +372,5 @@ $gamingPlaceLog('bootstrap_started', 'PHP front controller entered', array(
  *
  * And away we go...
  */
-$gamingPlaceLog('ci_bootstrap_starting', 'Loading CodeIgniter core', array('system_path' => BASEPATH, 'application_path' => APPPATH));
 	require_once BASEPATH.'core/CodeIgniter.php';
-	$gamingPlaceLog('ci_bootstrap_returned', 'CodeIgniter core returned normally');
+	
