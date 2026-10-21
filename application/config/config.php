@@ -227,7 +227,7 @@ $config['allow_get_array'] = TRUE;
 | your log files will fill up very fast.
 |
 */
-$config['log_threshold'] = 4; // Temporary debugging: log all CodeIgniter messages.
+$config['log_threshold'] = 1;
 
 /*
 |--------------------------------------------------------------------------
