@@ -23,7 +23,35 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-$config['base_url'] = rtrim(getenv('BASE_URL') ?: (((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost')), '/') . '/';
+$requestHost = trim((string) ($_SERVER['HTTP_HOST'] ?? ''));
+$forwardedProto = strtolower(trim((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')));
+$isVercel = getenv('VERCEL') === '1'
+    || strpos($requestHost, '.vercel.app') !== false
+    || strpos($requestHost, '.vercel.sh') !== false;
+
+if ($requestHost !== '' && !preg_match('/^(localhost|127\.0\.0\.1)(:\d+)?$/i', $requestHost)) {
+    // The incoming host is authoritative for the current request. This avoids
+    // generating production asset URLs from a stale BASE_URL=https://localhost.
+    $isHttps = $isVercel
+        || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || $forwardedProto === 'https';
+
+    $config['base_url'] = ($isHttps ? 'https://' : 'http://') . rtrim($requestHost, '/') . '/';
+} else {
+    // Local XAMPP installs commonly live in a subfolder such as /gamingplace/.
+    // Derive that path from the current front controller so local asset URLs
+    // work without requiring a hard-coded BASE_URL.
+    $scriptName = str_replace('\\\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    $scriptDirectory = rtrim(str_replace('\\\\', '/', dirname($scriptName)), '/');
+    $localPath = ($scriptDirectory === '' || $scriptDirectory === '.') ? '/' : $scriptDirectory . '/';
+
+    $requestIsHttps = (
+        (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || $forwardedProto === 'https'
+    );
+    $localHost = ($requestHost !== '' ? $requestHost : 'localhost');
+    $config['base_url'] = ($requestIsHttps ? 'https://' : 'http://') . $localHost . $localPath;
+}
 
 
 $config['tax']=4.99;

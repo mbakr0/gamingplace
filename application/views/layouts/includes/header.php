@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Starter Template · Bootstrap</title>
+    <title>GamingPlace — Game Store</title>
 
     <!-- Bootstrap core CSS -->
- <link href="<?php echo base_url();?>assets/css/bootstrap.css" rel="stylesheet">
+ <link href="<?php echo base_url('assets/css/bootstrap.css'); ?>" rel="stylesheet">
 
     <!-- Favicons -->
 <meta name="theme-color" content="#563d7c">
@@ -29,7 +29,7 @@
       }
     </style>
     <!-- Custom styles for this template -->
-    <link href="<?php echo base_url();?>assets/css/custom.css" rel="stylesheet">
+    <link href="<?php echo base_url('assets/css/custom.css'); ?>" rel="stylesheet">
   </head>
       <body>
       <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
