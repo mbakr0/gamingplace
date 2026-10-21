@@ -6,7 +6,7 @@ GamingPlace is a gaming e-commerce storefront built with **PHP, CodeIgniter 3, M
 
 - **Responsive storefront:** editorial hero, game collection, mobile navigation, and a cohesive footer.
 - **Database-driven catalogue:** game names, artwork, descriptions, prices, and detail pages continue to come from the existing MySQL database.
-- **Starter catalogue:** six demo game entries and idempotent seed SQL using artwork already included in the repository.
+- **Automatic database bootstrap:** creates the required missing tables on application startup without dropping existing tables or rows, then inserts the six starter games and starter categories if they are missing.
 - **Collection tools:** instant title search, price-range filters, and sorting by price or name.
 - **Product details:** dedicated game pages with artwork, description, quantity controls, and add-to-bag forms.
 - **Shopping bag:** quantity updates, removal by setting quantity to zero, item subtotals, shipping, tax, and order summary.
