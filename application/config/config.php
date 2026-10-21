@@ -23,7 +23,22 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-$config['base_url'] = rtrim(getenv('BASE_URL') ?: (((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost')), '/') . '/';
+$configuredBaseUrl = getenv('BASE_URL');
+if ($configuredBaseUrl) {
+    // Vercel terminates HTTPS at its proxy, so PHP may not see HTTPS directly.
+    if (getenv('VERCEL') === '1' || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https') {
+        $configuredBaseUrl = preg_replace('#^http://#i', 'https://', $configuredBaseUrl);
+    }
+    $config['base_url'] = rtrim($configuredBaseUrl, '/') . '/';
+} else {
+    $requestIsHttps = (
+        (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https'
+        || getenv('VERCEL') === '1'
+    );
+    $requestHost = $_SERVER['HTTP_HOST'] ?? (getenv('VERCEL_URL') ?: 'localhost');
+    $config['base_url'] = ($requestIsHttps ? 'https://' : 'http://') . rtrim($requestHost, '/') . '/';
+}
 
 
 $config['tax']=4.99;
