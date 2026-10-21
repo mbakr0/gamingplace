@@ -7,7 +7,7 @@
  */
 $assetRoot = realpath(__DIR__ . '/../assets');
 $requestedPath = isset($_GET['path']) ? (string) $_GET['path'] : '';
-$requestedPath = str_replace('\\\\', '/', $requestedPath);
+$requestedPath = str_replace('\\', '/', $requestedPath);
 
 if ($assetRoot === false || $requestedPath === '' || strpos($requestedPath, "\0") !== false) {
     http_response_code(404);
