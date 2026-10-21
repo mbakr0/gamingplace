@@ -90,6 +90,22 @@ switch (ENVIRONMENT)
 		exit(1); // EXIT_ERROR
 }
 
+
+// Temporary production-safe diagnostics: send fatal PHP errors to the Vercel
+// runtime logs without exposing stack traces or secrets to website visitors.
+register_shutdown_function(static function () {
+	$error = error_get_last();
+	if ($error !== NULL && in_array($error['type'], array(E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR), TRUE))
+	{
+		error_log(sprintf(
+			'GamingPlace PHP fatal error: %s in %s:%d',
+			$error['message'],
+			$error['file'],
+			$error['line']
+		));
+	}
+});
+
 /*
  *---------------------------------------------------------------
  * SYSTEM DIRECTORY NAME
