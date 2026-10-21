@@ -206,13 +206,20 @@ class CI_DB_mysqli_driver extends CI_DB {
 			if (
 				($client_flags & MYSQLI_CLIENT_SSL)
 				&& version_compare($this->_mysqli->client_info, '5.7.3', '<=')
-				&& empty($this->_mysqli->query("SHOW STATUS LIKE 'ssl_cipher'")->fetch_object()->Value)
 			)
 			{
-				$this->_mysqli->close();
-				$message = 'MySQLi was configured for an SSL connection, but got an unencrypted connection instead!';
-				log_message('error', $message);
-				return ($this->db_debug) ? $this->display_error($message, '', TRUE) : FALSE;
+				// TiDB may return this status variable with a case-sensitive name.
+				// Verify the negotiated cipher without treating a valid TLS session as plaintext.
+				$sslResult = $this->_mysqli->query("SHOW STATUS LIKE 'Ssl_cipher'");
+				$sslRow = $sslResult ? $sslResult->fetch_object() : FALSE;
+
+				if ( ! $sslRow || empty($sslRow->Value))
+				{
+					$this->_mysqli->close();
+					$message = 'MySQLi was configured for an SSL connection, but got an unencrypted connection instead!';
+					log_message('error', $message);
+					return ($this->db_debug) ? $this->display_error($message, '', TRUE) : FALSE;
+				}
 			}
 
 			return $this->_mysqli;
