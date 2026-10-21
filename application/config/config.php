@@ -38,13 +38,19 @@ if ($requestHost !== '' && !preg_match('/^(localhost|127\.0\.0\.1)(:\d+)?$/i', $
 
     $config['base_url'] = ($isHttps ? 'https://' : 'http://') . rtrim($requestHost, '/') . '/';
 } else {
-    // Use BASE_URL only for local development or requests without a usable host.
-    $configuredBaseUrl = trim((string) getenv('BASE_URL'));
-    if ($configuredBaseUrl !== '') {
-        $config['base_url'] = rtrim($configuredBaseUrl, '/') . '/';
-    } else {
-        $config['base_url'] = 'http://localhost/';
-    }
+    // Local XAMPP installs commonly live in a subfolder such as /gamingplace/.
+    // Derive that path from the current front controller so local asset URLs
+    // work without requiring a hard-coded BASE_URL.
+    $scriptName = str_replace('\\\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    $scriptDirectory = rtrim(str_replace('\\\\', '/', dirname($scriptName)), '/');
+    $localPath = ($scriptDirectory === '' || $scriptDirectory === '.') ? '/' : $scriptDirectory . '/';
+
+    $requestIsHttps = (
+        (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || $forwardedProto === 'https'
+    );
+    $localHost = ($requestHost !== '' ? $requestHost : 'localhost');
+    $config['base_url'] = ($requestIsHttps ? 'https://' : 'http://') . $localHost . $localPath;
 }
 
 
