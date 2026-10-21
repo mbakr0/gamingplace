@@ -29,6 +29,7 @@ if ($databaseUseSsl) {
 $db['default'] = array(
     'dsn'        => '',
     'hostname'   => $databaseHost,
+    'port'       => (int) (getenv('DB_PORT') ?: ($databaseIsLocal ? 3306 : 4000)),
     'username'   => getenv('DB_USER') ?: 'root',
     'password'   => getenv('DB_PASS') ?: '',
     'database'   => getenv('DB_NAME') ?: 'gamingplace',
