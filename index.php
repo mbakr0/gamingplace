@@ -1,4 +1,62 @@
 <?php
+
+/*
+ * Load local environment variables for XAMPP development.
+ * Vercel's configured environment variables take precedence because
+ * existing process variables are never overwritten.
+ */
+$gamingPlaceEnvFile = __DIR__ . DIRECTORY_SEPARATOR . '.env.local';
+
+if (is_file($gamingPlaceEnvFile) && is_readable($gamingPlaceEnvFile)) {
+    $gamingPlaceEnvLines = file($gamingPlaceEnvFile, FILE_IGNORE_NEW_LINES);
+
+    if (is_array($gamingPlaceEnvLines)) {
+        foreach ($gamingPlaceEnvLines as $gamingPlaceEnvLine) {
+            $gamingPlaceEnvLine = trim($gamingPlaceEnvLine);
+
+            // Ignore blank lines, comments, and unsupported lines.
+            if ($gamingPlaceEnvLine === '' || strpos($gamingPlaceEnvLine, '#') === 0) {
+                continue;
+            }
+
+            if (strncmp($gamingPlaceEnvLine, 'export ', 7) === 0) {
+                $gamingPlaceEnvLine = trim(substr($gamingPlaceEnvLine, 7));
+            }
+
+            if (strpos($gamingPlaceEnvLine, '=') === false) {
+                continue;
+            }
+
+            list($gamingPlaceEnvName, $gamingPlaceEnvValue) = explode('=', $gamingPlaceEnvLine, 2);
+            $gamingPlaceEnvName = trim($gamingPlaceEnvName);
+            $gamingPlaceEnvValue = trim($gamingPlaceEnvValue);
+
+            if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $gamingPlaceEnvName)) {
+                continue;
+            }
+
+            // Do not replace variables already supplied by the operating system or hosting platform.
+            if (getenv($gamingPlaceEnvName) !== false) {
+                continue;
+            }
+
+            // Remove matching outer quotes without altering the value inside.
+            $valueLength = strlen($gamingPlaceEnvValue);
+            if ($valueLength >= 2) {
+                $firstChar = $gamingPlaceEnvValue[0];
+                $lastChar = $gamingPlaceEnvValue[$valueLength - 1];
+                if (($firstChar === '"' && $lastChar === '"') || ($firstChar === "'" && $lastChar === "'")) {
+                    $gamingPlaceEnvValue = substr($gamingPlaceEnvValue, 1, -1);
+                }
+            }
+
+            putenv($gamingPlaceEnvName . '=' . $gamingPlaceEnvValue);
+            $_ENV[$gamingPlaceEnvName] = $gamingPlaceEnvValue;
+            $_SERVER[$gamingPlaceEnvName] = $gamingPlaceEnvValue;
+        }
+    }
+}
+
 /**
  * CodeIgniter
  *
