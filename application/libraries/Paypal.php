@@ -18,11 +18,13 @@ class Paypal
 			      // Set the curl parameters.
 			      $ch = curl_init();
 			      curl_setopt($ch, CURLOPT_URL, $API_Endpoint);
-			      curl_setopt($ch, CURLOPT_VERBOSE, 1);
+			      curl_setopt($ch, CURLOPT_VERBOSE, 0);
 			     
-			      // Turn off the server and peer verification (TrustManager Concept).
-			      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-			      curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+			      // Verify PayPal's TLS certificate to prevent man-in-the-middle attacks.
+			      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+			      curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+			      curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+			      curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 			     
 			      curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 			      curl_setopt($ch, CURLOPT_POST, 1);
@@ -45,16 +47,19 @@ class Paypal
 			     
 			      $httpParsedResponseAr = array();
 			      foreach ($httpResponseAr as $i => $value) {
-			         $tmpAr = explode("=", $value);
+			         $tmpAr = explode("=", $value, 2);
 			         if(sizeof($tmpAr) > 1) {
-			            $httpParsedResponseAr[$tmpAr[0]] = $tmpAr[1];
+			            $httpParsedResponseAr[urldecode($tmpAr[0])] = urldecode($tmpAr[1]);
 			         }
 			      }
 			     
 			      if((0 == sizeof($httpParsedResponseAr)) || !array_key_exists('ACK', $httpParsedResponseAr)) {
-			         exit("Invalid HTTP Response for POST request($nvpreq) to $API_Endpoint.");
+			         error_log("PayPal API returned an invalid response.");
+			         curl_close($ch);
+			         return array("ACK" => "Failure", "L_LONGMESSAGE0" => "Payment provider returned an invalid response.");
 			      }
 			     
+			      curl_close($ch);
 			      return $httpParsedResponseAr;
 			   }
 

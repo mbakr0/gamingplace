@@ -60,6 +60,14 @@ class Cart extends CI_controller
 
     public function process()
     {
+        // The checkout endpoint must enforce authentication server-side; hiding
+        // the checkout button in the view is not an access-control check.
+        if (!$this->session->userdata('logged_in') || !$this->session->userdata('user_id')) {
+            $this->session->set_flashdata('fail_login', 'Please log in before checking out.');
+            redirect('users/login');
+            return;
+        }
+
         if (!$this->input->post()) {
             redirect('cart');
             return;
