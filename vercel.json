@@ -16,6 +16,14 @@
       "dest": "/api/index.php"
     },
     {
+      "src": "^/index\\.php/(.*)$",
+      "dest": "/api/index.php"
+    },
+    {
+      "src": "^/cart(?:/.*)?$",
+      "dest": "/api/index.php"
+    },
+    {
       "handle": "filesystem"
     },
     {
