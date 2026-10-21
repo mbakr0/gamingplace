@@ -23,21 +23,31 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-$configuredBaseUrl = getenv('BASE_URL');
-if ($configuredBaseUrl) {
-    // Vercel terminates HTTPS at its proxy, so PHP may not see HTTPS directly.
-    if (getenv('VERCEL') === '1' || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https') {
-        $configuredBaseUrl = preg_replace('#^http://#i', 'https://', $configuredBaseUrl);
+$isVercel = getenv('VERCEL') === '1';
+$forwardedProto = strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
+$requestHost = trim((string) ($_SERVER['HTTP_HOST'] ?? ''), " \\t\\n\\r\\0\\x0B");
+$vercelHost = trim((string) (getenv('VERCEL_URL') ?: ''), " \\t\\n\\r\\0\\x0B");
+
+// On Vercel, never trust a stale local BASE_URL such as https://localhost/.
+if ($isVercel) {
+    if ($requestHost === '' || preg_match('/^(localhost|127\\.0\\.0\\.1)(:\\d+)?$/i', $requestHost)) {
+        $requestHost = $vercelHost !== '' ? $vercelHost : 'gamingplace.vercel.app';
     }
-    $config['base_url'] = rtrim($configuredBaseUrl, '/') . '/';
+    $config['base_url'] = 'https://' . rtrim($requestHost, '/') . '/';
 } else {
-    $requestIsHttps = (
-        (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https'
-        || getenv('VERCEL') === '1'
-    );
-    $requestHost = $_SERVER['HTTP_HOST'] ?? (getenv('VERCEL_URL') ?: 'localhost');
-    $config['base_url'] = ($requestIsHttps ? 'https://' : 'http://') . rtrim($requestHost, '/') . '/';
+    $configuredBaseUrl = trim((string) getenv('BASE_URL'));
+    if ($configuredBaseUrl !== '') {
+        $config['base_url'] = rtrim($configuredBaseUrl, '/') . '/';
+    } else {
+        $requestIsHttps = (
+            (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || $forwardedProto === 'https'
+        );
+        if ($requestHost === '') {
+            $requestHost = 'localhost';
+        }
+        $config['base_url'] = ($requestIsHttps ? 'https://' : 'http://') . rtrim($requestHost, '/') . '/';
+    }
 }
 
 
