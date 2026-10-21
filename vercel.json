@@ -8,15 +8,18 @@
   },
   "routes": [
     {
+      "src": "^/$",
+      "dest": "/api/index.php"
+    },
+    {
       "src": "^/index\\.php$",
       "dest": "/api/index.php"
     },
     {
-      "src": "^/api/(.*)$",
-      "dest": "/api/$1"
+      "handle": "filesystem"
     },
     {
-      "src": "^/(.*)$",
+      "src": "/(.*)",
       "dest": "/api/index.php"
     }
   ]
