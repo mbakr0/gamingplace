@@ -317,6 +317,28 @@ class Cart extends CI_controller
                 return;
             }
 
+            $verifiedPayerId = isset($details['PAYERID']) ? trim((string) $details['PAYERID']) : '';
+            if ($verifiedPayerId === '' || !hash_equals($payerId, $verifiedPayerId)) {
+                log_message('error', 'GamingPlace PayPal payer verification failed for token ' . $token . '.');
+                $this->session->set_flashdata('cart_error', 'The PayPal account details did not match this checkout. Your bag has been kept unchanged.');
+                redirect('cart');
+                return;
+            }
+
+            if (isset($details['PAYMENTREQUEST_0_AMT']) && abs((float) $details['PAYMENTREQUEST_0_AMT'] - (float) $checkout['grand_total']) > 0.01) {
+                log_message('error', 'GamingPlace PayPal checkout amount mismatch for token ' . $token . '.');
+                $this->session->set_flashdata('cart_error', 'The checkout amount could not be verified. Your bag has been kept unchanged.');
+                redirect('cart');
+                return;
+            }
+
+            if (isset($details['PAYMENTREQUEST_0_CURRENCYCODE']) && strtoupper((string) $details['PAYMENTREQUEST_0_CURRENCYCODE']) !== 'USD') {
+                log_message('error', 'GamingPlace PayPal checkout currency mismatch for token ' . $token . '.');
+                $this->session->set_flashdata('cart_error', 'The checkout currency could not be verified. Your bag has been kept unchanged.');
+                redirect('cart');
+                return;
+            }
+
             $paymentParams = array(
                 'TOKEN' => $token,
                 'PAYERID' => $payerId,
@@ -342,10 +364,18 @@ class Cart extends CI_controller
 
             $paymentStatus = isset($payment['PAYMENTINFO_0_PAYMENTSTATUS']) ? $payment['PAYMENTINFO_0_PAYMENTSTATUS'] : '';
             $transactionId = isset($payment['PAYMENTINFO_0_TRANSACTIONID']) ? trim((string) $payment['PAYMENTINFO_0_TRANSACTIONID']) : '';
+            $paidAmount = isset($payment['PAYMENTINFO_0_AMT']) ? (float) $payment['PAYMENTINFO_0_AMT'] : -1;
+            $paidCurrency = isset($payment['PAYMENTINFO_0_CURRENCYCODE']) ? strtoupper((string) $payment['PAYMENTINFO_0_CURRENCYCODE']) : '';
 
-            if (strcasecmp($paymentStatus, 'Completed') !== 0 || $transactionId === '') {
-                log_message('error', 'GamingPlace PayPal payment not completed. Response: ' . json_encode($payment));
-                $this->session->set_flashdata('cart_error', 'PayPal has not returned a completed payment confirmation. Your bag has been kept unchanged.');
+            if (
+                strcasecmp($paymentStatus, 'Completed') !== 0
+                || $transactionId === ''
+                || $paidAmount < 0
+                || abs($paidAmount - (float) $checkout['grand_total']) > 0.01
+                || $paidCurrency !== 'USD'
+            ) {
+                log_message('error', 'GamingPlace PayPal payment confirmation did not match the expected amount, currency, or status. Response: ' . json_encode($payment));
+                $this->session->set_flashdata('cart_error', 'PayPal has not returned a verified, completed payment for the expected amount. Your bag has been kept unchanged.');
                 redirect('cart');
                 return;
             }
