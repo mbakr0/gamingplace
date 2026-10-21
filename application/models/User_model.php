@@ -1,33 +1,48 @@
 <?php
 /**
- * 
+ * User model.
  */
 class User_model extends CI_model
 {
-	
-	public function register(){
-		$data = array(
-			'first_name' => $this->input->post('first_name') ,
-			'last_name' => $this->input->post('last_name') ,
-			'email' => $this->input->post('email') ,
-			'username' => $this->input->post('username') ,
-			'password' => md5($this->input->post('password'))
-			 );
+    public function register()
+    {
+        $data = [
+            'first_name' => trim($this->input->post('first_name', true)),
+            'last_name'  => trim($this->input->post('last_name', true)),
+            'email'      => trim($this->input->post('email', true)),
+            'username'   => trim($this->input->post('username', true)),
+            'password'   => password_hash($this->input->post('password'), PASSWORD_DEFAULT)
+        ];
 
-		$insert = $this->db->insert('users',$data);
-		return $insert;
-	}
+        $exists = $this->db->group_start()
+            ->where('username', $data['username'])
+            ->or_where('email', $data['email'])
+            ->group_end()
+            ->count_all_results('users');
 
-	public function login($username,$password){
+        if ($exists > 0) {
+            return false;
+        }
 
-		$this->db->where('username',$username);
-		$this->db->where('password',$password);
+        return $this->db->insert('users', $data);
+    }
 
-		$results = $this->db->get('users');
-		if ($results->num_rows() == 1) {
-			return $results->row(0)->id;
-		} else {
-			return false;
-		}
-	}
+    public function login($username, $password)
+    {
+        $user = $this->db->where('username', trim($username))->get('users')->row();
+
+        if (!$user) {
+            return false;
+        }
+
+        // Accept legacy MD5 hashes once, then transparently upgrade them.
+        $valid = password_verify($password, $user->password);
+        if (!$valid && hash_equals((string)$user->password, md5($password))) {
+            $newHash = password_hash($password, PASSWORD_DEFAULT);
+            $this->db->where('id', $user->id)->update('users', ['password' => $newHash]);
+            $valid = true;
+        }
+
+        return $valid ? $user->id : false;
+    }
 }
