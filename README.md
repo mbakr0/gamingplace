@@ -40,6 +40,8 @@ The application loads `.env.local` in the local front controller without overwri
 
 ## Environment configuration
 
+Use `.env.example` as a starting point for the required variable names. For local XAMPP development, keep real local values in `.env.local` (which the front controller reads) and never commit that file.
+
 Database variables:
 
 - `DB_HOST`
