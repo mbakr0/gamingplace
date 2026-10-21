@@ -23,30 +23,27 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-$isVercel = getenv('VERCEL') === '1';
-$forwardedProto = strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
-$requestHost = trim((string) ($_SERVER['HTTP_HOST'] ?? ''), " \\t\\n\\r\\0\\x0B");
-$vercelHost = trim((string) (getenv('VERCEL_URL') ?: ''), " \\t\\n\\r\\0\\x0B");
+$requestHost = trim((string) ($_SERVER['HTTP_HOST'] ?? ''));
+$forwardedProto = strtolower(trim((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')));
+$isVercel = getenv('VERCEL') === '1'
+    || strpos($requestHost, '.vercel.app') !== false
+    || strpos($requestHost, '.vercel.sh') !== false;
 
-// On Vercel, never trust a stale local BASE_URL such as https://localhost/.
-if ($isVercel) {
-    if ($requestHost === '' || preg_match('/^(localhost|127\\.0\\.0\\.1)(:\\d+)?$/i', $requestHost)) {
-        $requestHost = $vercelHost !== '' ? $vercelHost : 'gamingplace.vercel.app';
-    }
-    $config['base_url'] = 'https://' . rtrim($requestHost, '/') . '/';
+if ($requestHost !== '' && !preg_match('/^(localhost|127\.0\.0\.1)(:\d+)?$/i', $requestHost)) {
+    // The incoming host is authoritative for the current request. This avoids
+    // generating production asset URLs from a stale BASE_URL=https://localhost.
+    $isHttps = $isVercel
+        || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || $forwardedProto === 'https';
+
+    $config['base_url'] = ($isHttps ? 'https://' : 'http://') . rtrim($requestHost, '/') . '/';
 } else {
+    // Use BASE_URL only for local development or requests without a usable host.
     $configuredBaseUrl = trim((string) getenv('BASE_URL'));
     if ($configuredBaseUrl !== '') {
         $config['base_url'] = rtrim($configuredBaseUrl, '/') . '/';
     } else {
-        $requestIsHttps = (
-            (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-            || $forwardedProto === 'https'
-        );
-        if ($requestHost === '') {
-            $requestHost = 'localhost';
-        }
-        $config['base_url'] = ($requestIsHttps ? 'https://' : 'http://') . rtrim($requestHost, '/') . '/';
+        $config['base_url'] = 'http://localhost/';
     }
 }
 
