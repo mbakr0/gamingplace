@@ -6,6 +6,7 @@ GamingPlace is a gaming e-commerce storefront built with **PHP, CodeIgniter 3, M
 
 - **Responsive storefront:** editorial hero, game collection, mobile navigation, and a cohesive footer.
 - **Database-driven catalogue:** game names, artwork, descriptions, prices, and detail pages continue to come from the existing MySQL database.
+- **Starter catalogue:** six demo game entries and idempotent seed SQL using artwork already included in the repository.
 - **Collection tools:** instant title search, price-range filters, and sorting by price or name.
 - **Product details:** dedicated game pages with artwork, description, quantity controls, and add-to-bag forms.
 - **Shopping bag:** quantity updates, removal by setting quantity to zero, item subtotals, shipping, tax, and order summary.
@@ -29,9 +30,11 @@ GamingPlace is a gaming e-commerce storefront built with **PHP, CodeIgniter 3, M
 
 1. Place or clone the repository at `C:\xampp\htdocs\gamingplace`.
 2. Start Apache and MySQL from the XAMPP Control Panel.
-3. Create the MySQL database named `gamingplace` and import your database schema and product data. A SQL dump is not bundled in this repository.
-4. Configure local database credentials in a root `.env.local` file if the defaults in `application/config/database.php` do not match your setup.
+3. Create the MySQL database named `gamingplace` and import your existing database schema if you haven't already.
+4. In phpMyAdmin, select the same database configured by `DB_NAME` in `application/config/database.php`, open **Import**, and import `database/seed_products.sql`. The seed adds six demo entries using existing image files; it can be run again without duplicating matching titles.
 5. Open `http://localhost/gamingplace/`.
+
+The seed SQL expects the `products` table to have the `title`, `description`, `price`, and `image` columns used by the app, with an auto-incrementing `id`. If your existing table has additional required columns without defaults, adjust the seed to match its structure shown in phpMyAdmin's **Structure** tab.
 
 The application loads `.env.local` in the local front controller without overwriting environment variables already supplied by the host. Never commit `.env.local` or real credentials.
 
@@ -68,6 +71,7 @@ The project uses a legacy CodeIgniter 3 architecture and a Vercel PHP runtime. R
 - `application/views/` — storefront, details, cart, and registration views.
 - `assets/css/custom.css` — storefront design system and responsive layouts.
 - `assets/js/storefront.js` — mobile navigation, collection search, filters, sorting, and small UI interactions.
+- `database/seed_products.sql` — six starter catalogue entries.
 
 ## Portfolio summary
 
