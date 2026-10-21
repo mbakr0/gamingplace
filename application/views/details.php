@@ -1,27 +1,20 @@
-
-
-<div class="row details">
-    <div class="col-md-4">
-        <img src="<?php echo base_url();?>assets/images/<?php echo $product->image?>">
+<div class="product-detail">
+    <div class="product-detail-image">
+        <img src="<?php echo base_url('assets/images/' . rawurlencode($product->image)); ?>" alt="<?php echo html_escape($product->title); ?>">
     </div>
-    <div class="col-md-8">
-    	<h3><?php echo $product->title;?></h3>
-        <div class="details-price">
-            Price : $<?php echo $product->price;?>
-        </div>
+    <div class="product-detail-content">
+        <span class="eyebrow">GAME DETAILS</span>
+        <h1><?php echo html_escape($product->title); ?></h1>
+        <div class="details-price">$<?php echo number_format((float)$product->price, 2); ?></div>
         <div class="details-description">
-            <p>
-            	<?php echo $product->description;?>
-            </p>
+            <?php echo nl2br(html_escape($product->description)); ?>
         </div>
-        <div class="details-buy">
-	    <form method="post" action="<?php echo base_url();?>cart/add"> 
-    		QTY: <input type="text" name="qty" class="form-control qty" value="1">
-    		<input type="hidden" name="item_number" value="<?php echo $product->id;?>">
-    		<input type="hidden" name="price" value="<?php echo $product->price;?>">
-    		<input type="hidden" name="title" value="<?php echo $product->title;?>">
-        	<button class="btn btn-primary" type="submit">Add to Cart</button>
+        <form method="post" action="<?php echo base_url('cart/add'); ?>" class="details-buy-form">
+            <label for="detail-qty">Quantity</label>
+            <input id="detail-qty" type="number" name="qty" class="form-control qty" value="1" min="1" max="99" step="1">
+            <input type="hidden" name="item_number" value="<?php echo (int)$product->id; ?>">
+            <button class="btn btn-primary" type="submit">Add to Cart</button>
         </form>
-        </div>
+        <a class="back-link" href="<?php echo base_url('products'); ?>">&larr; Back to games</a>
     </div>
 </div>
