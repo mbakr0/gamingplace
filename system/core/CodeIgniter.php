@@ -55,6 +55,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @var	string
  *
  */
+	error_log('[GamingPlace] ci_stage=core_file_execution_started');
 	const CI_VERSION = '3.1.11';
 
 /*
@@ -69,7 +70,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 	if (file_exists(APPPATH.'config/constants.php'))
 	{
+		error_log('[GamingPlace] ci_stage=before_app_constants');
 		require_once(APPPATH.'config/constants.php');
+		error_log('[GamingPlace] ci_stage=app_constants_loaded');
 	}
 
 /*
@@ -77,7 +80,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *  Load the global functions
  * ------------------------------------------------------
  */
+	error_log('[GamingPlace] ci_stage=before_common_php');
 	require_once(BASEPATH.'core/Common.php');
+	error_log('[GamingPlace] ci_stage=common_php_loaded');
 
 
 /*
@@ -135,6 +140,7 @@ if ( ! is_php('5.4'))
  *  Define a custom error handler so we can log PHP errors
  * ------------------------------------------------------
  */
+	error_log('[GamingPlace] ci_stage=before_ci_error_handlers');
 	set_error_handler('_error_handler');
 	set_exception_handler('_exception_handler');
 	register_shutdown_function('_shutdown_handler');
@@ -165,6 +171,7 @@ if ( ! is_php('5.4'))
  *  Should we use a Composer autoloader?
  * ------------------------------------------------------
  */
+	error_log('[GamingPlace] ci_stage=before_composer_autoload_config');
 	if ($composer_autoload = config_item('composer_autoload'))
 	{
 		if ($composer_autoload === TRUE)
