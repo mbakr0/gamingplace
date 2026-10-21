@@ -18,7 +18,7 @@ class Paypal
 			      // Set the curl parameters.
 			      $ch = curl_init();
 			      curl_setopt($ch, CURLOPT_URL, $API_Endpoint);
-			      curl_setopt($ch, CURLOPT_VERBOSE, 1);
+			      curl_setopt($ch, CURLOPT_VERBOSE, 0);
 			     
 			      // Verify PayPal's TLS certificate to prevent man-in-the-middle attacks.
 			      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
@@ -47,16 +47,19 @@ class Paypal
 			     
 			      $httpParsedResponseAr = array();
 			      foreach ($httpResponseAr as $i => $value) {
-			         $tmpAr = explode("=", $value);
+			         $tmpAr = explode("=", $value, 2);
 			         if(sizeof($tmpAr) > 1) {
-			            $httpParsedResponseAr[$tmpAr[0]] = $tmpAr[1];
+			            $httpParsedResponseAr[urldecode($tmpAr[0])] = urldecode($tmpAr[1]);
 			         }
 			      }
 			     
 			      if((0 == sizeof($httpParsedResponseAr)) || !array_key_exists('ACK', $httpParsedResponseAr)) {
-			         exit("Invalid HTTP Response for POST request($nvpreq) to $API_Endpoint.");
+			         error_log("PayPal API returned an invalid response.");
+			         curl_close($ch);
+			         return array("ACK" => "Failure", "L_LONGMESSAGE0" => "Payment provider returned an invalid response.");
 			      }
 			     
+			      curl_close($ch);
 			      return $httpParsedResponseAr;
 			   }
 
